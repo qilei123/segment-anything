@@ -42,4 +42,5 @@ yarn.lock
 package-lock.json
 
 DATA
-fine_tuning
+fine_tuning/temp
+fine_tuning/TN-SCUI2020
