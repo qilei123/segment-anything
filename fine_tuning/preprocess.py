@@ -12,25 +12,26 @@ data_root = 'TN-SCUI2020/segmentation'
 img_list = sorted(glob.glob(os.path.join(data_root,"image/*.bmp")))
 msk_list = sorted(glob.glob(os.path.join(data_root,"mask/*.bmp")))
 
-train_size = 500*2
-
 bbox_coords = {}
 ground_truth_masks = {}
+images = {}
 
-for index,img_dir,msk_dir in enumerate(zip(img_list[:train_size],msk_list[:train_size])):
+for img_dir,msk_dir in zip(img_list,msk_list):
+    
+    index_key = os.path.basename(img_dir)
     
     gray_image = np.array(Image.open(img_dir))
+    images[index_key] = gray_image
     
     mask = np.array(Image.open(msk_dir))
-    
-    ground_truth_masks[index] = mask
+    ground_truth_masks[index_key] = mask
     
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_LIST,
                                             cv2.CHAIN_APPROX_SIMPLE)[-2:]
 
     x, y, w, h = cv2.boundingRect(contours[0]) #第一个为最大连通域，为目标区域
     height, width, _ = gray_image.shape
-    bbox_coords[index] = np.array([x, y, x + w, y + h])
+    bbox_coords[index_key] = np.array([x, y, x + w, y + h])
 
 
 # Helper functions provided in https://github.com/facebookresearch/segment-anything/blob/9e8f1309c94f1128a6e5c047a10fdcb02fc8d651/notebooks/predictor_example.ipynb

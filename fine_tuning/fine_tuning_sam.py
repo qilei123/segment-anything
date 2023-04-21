@@ -19,8 +19,7 @@ from segment_anything.utils.transforms import ResizeLongestSide
 
 transformed_data = defaultdict(dict)
 for k in bbox_coords.keys():
-    image = cv2.imread(f'scans/scans/{k}.png')
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = images[k]
     transform = ResizeLongestSide(sam_model.image_encoder.img_size)
     input_image = transform.apply_image(image)
     input_image_torch = torch.as_tensor(input_image, device=device)
@@ -51,13 +50,14 @@ from statistics import mean
 from tqdm import tqdm
 from torch.nn.functional import threshold, normalize
 
-num_epochs = 100
+num_epochs = 10
 losses = []
+train_size = 500*2 #只用前500例进行训练
 
 for epoch in range(num_epochs):
     epoch_losses = []
     # Just train on the first 20 examples
-    for k in keys[:20]:
+    for k in keys[:train_size]:
         input_image = transformed_data[k]['image'].to(device)
         input_size = transformed_data[k]['input_size']
         original_image_size = transformed_data[k]['original_image_size']
@@ -125,9 +125,8 @@ predictor_tuned = SamPredictor(sam_model)
 predictor_original = SamPredictor(sam_model_orig)
 
 # The model has not seen keys[21] (or keys[20]) since we only trained on keys[:20]
-k = keys[21]
-image = cv2.imread(f'scans/scans/{k}.png')
-image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+k = keys[train_size+100]
+image = images[k]
 
 predictor_tuned.set_image(image)
 predictor_original.set_image(image)
