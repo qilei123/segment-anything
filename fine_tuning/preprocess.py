@@ -7,7 +7,7 @@ from PIL import Image
 import os
 
 
-data_root = 'TN-SCUI2020/segmentation'
+data_root = 'fine_tuning/TN-SCUI2020/segmentation/augtrain'
 
 img_list = sorted(glob.glob(os.path.join(data_root,"image/*.bmp")))
 msk_list = sorted(glob.glob(os.path.join(data_root,"mask/*.bmp")))
@@ -24,13 +24,13 @@ for img_dir,msk_dir in zip(img_list,msk_list):
     images[index_key] = gray_image
     
     mask = np.array(Image.open(msk_dir))
-    ground_truth_masks[index_key] = mask
+    ground_truth_masks[index_key] = (mask>0.5)
     
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_LIST,
                                             cv2.CHAIN_APPROX_SIMPLE)[-2:]
 
     x, y, w, h = cv2.boundingRect(contours[0]) #第一个为最大连通域，为目标区域
-    height, width, _ = gray_image.shape
+    height, width = gray_image.shape
     bbox_coords[index_key] = np.array([x, y, x + w, y + h])
 
 

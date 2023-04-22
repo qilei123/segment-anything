@@ -50,9 +50,9 @@ from statistics import mean
 from tqdm import tqdm
 from torch.nn.functional import threshold, normalize
 
-num_epochs = 10
+num_epochs = 500
 losses = []
-train_size = 500*2 #只用前500例进行训练
+train_size = 100*2 #只用前500例进行训练
 
 for epoch in range(num_epochs):
     epoch_losses = []
