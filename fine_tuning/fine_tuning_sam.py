@@ -7,8 +7,7 @@ device = 'cuda:0'
 from segment_anything import SamPredictor, sam_model_registry
 
 sam_model = sam_model_registry[model_type](checkpoint=checkpoint)
-sam_model.to(device)
-sam_model.train()
+
 
 # Preprocess the images
 from collections import defaultdict
@@ -18,11 +17,11 @@ import torch
 from segment_anything.utils.transforms import ResizeLongestSide
 
 transformed_data = defaultdict(dict)
-for k in bbox_coords.keys():
+for k in tqdm(bbox_coords.keys()):
     image = images[k]
     transform = ResizeLongestSide(sam_model.image_encoder.img_size)
     input_image = transform.apply_image(image)
-    input_image_torch = torch.as_tensor(input_image, device=device)
+    input_image_torch = torch.as_tensor(input_image)
     transformed_image = input_image_torch.permute(
         2, 0, 1).contiguous()[None, :, :, :]
 
@@ -35,7 +34,7 @@ for k in bbox_coords.keys():
     transformed_data[k]['original_image_size'] = original_image_size
 
 # Set up the optimizer, hyperparameter tuning will improve performance here
-lr = 1e-4
+lr = 1e-5
 wd = 0
 optimizer = torch.optim.Adam(sam_model.mask_decoder.parameters(),
                              lr=lr,
@@ -50,14 +49,15 @@ from statistics import mean
 from tqdm import tqdm
 from torch.nn.functional import threshold, normalize
 
-num_epochs = 500
+num_epochs = 10
 losses = []
-train_size = 100*2 #只用前500例进行训练
-
+sam_model.to(device)
+sam_model.train()
 for epoch in range(num_epochs):
     epoch_losses = []
+    print("training epoch {0} ...".format(epoch))
     # Just train on the first 20 examples
-    for k in keys[:train_size]:
+    for k in tqdm(keys[:train_size]):
         input_image = transformed_data[k]['image'].to(device)
         input_size = transformed_data[k]['input_size']
         original_image_size = transformed_data[k]['original_image_size']
@@ -112,7 +112,8 @@ plt.title('Mean epoch loss')
 plt.xlabel('Epoch Number')
 plt.ylabel('Loss')
 plt.savefig("loss.png")
-plt.show()
+#plt.show()
+
 
 # Load up the model with default weights
 sam_model_orig = sam_model_registry[model_type](checkpoint=checkpoint)
@@ -160,4 +161,8 @@ show_box(input_bbox, axs[1])
 axs[1].set_title('Mask with Untuned Model', fontsize=26)
 axs[1].axis('off')
 
-plt.show()
+plt.savefig("compare.png")
+#plt.show()
+
+sam_model.eval()
+torch.save(sam_model,'fine_tuned_sam_4_tn_scui.pth')

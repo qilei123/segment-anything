@@ -5,23 +5,25 @@ import cv2
 import glob
 from PIL import Image
 import os
+from tqdm import tqdm
 
 
 data_root = 'fine_tuning/TN-SCUI2020/segmentation/augtrain'
 
-img_list = sorted(glob.glob(os.path.join(data_root,"image/*.bmp")))
-msk_list = sorted(glob.glob(os.path.join(data_root,"mask/*.bmp")))
+img_list = sorted(glob.glob(os.path.join(data_root,"image/*.bmp")))[:100]
+msk_list = sorted(glob.glob(os.path.join(data_root,"mask/*.bmp")))[:100]
 
 bbox_coords = {}
 ground_truth_masks = {}
 images = {}
+train_size = 10*2 #只用前500例进行训练
 
-for img_dir,msk_dir in zip(img_list,msk_list):
+for img_dir,msk_dir in tqdm(zip(img_list,msk_list)):
     
     index_key = os.path.basename(img_dir)
     
-    gray_image = np.array(Image.open(img_dir))
-    images[index_key] = gray_image
+    image = cv2.imread(img_dir)#np.array(Image.open(img_dir))
+    images[index_key] = image
     
     mask = np.array(Image.open(msk_dir))
     ground_truth_masks[index_key] = (mask>0.5)
@@ -30,7 +32,7 @@ for img_dir,msk_dir in zip(img_list,msk_list):
                                             cv2.CHAIN_APPROX_SIMPLE)[-2:]
 
     x, y, w, h = cv2.boundingRect(contours[0]) #第一个为最大连通域，为目标区域
-    height, width = gray_image.shape
+    height, width, _ = image.shape
     bbox_coords[index_key] = np.array([x, y, x + w, y + h])
 
 

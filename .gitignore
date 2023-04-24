@@ -44,3 +44,4 @@ package-lock.json
 DATA
 fine_tuning/temp
 fine_tuning/TN-SCUI2020
+*.pth
